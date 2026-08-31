@@ -40,10 +40,12 @@ with `count >= N` and, if `count == N`, `head.hash == H`. If those
 numbers do not line up, the chain has been rewritten between the
 checkpoint and now.
 
-The checkpoint does not sign anything. It relies on GitHub's own
-commit history to make the timestamp and the file contents
-non-repudiable. If you distrust GitHub too, the same JSONL is a fine
-target for an independent notary; the format is stable on purpose.
+The checkpoint does not sign anything. It is a public external
+log, timestamped through GitHub's commit history. It is not an
+oracle and not proof against a coordinated rewrite of both surfaces
+at once; what it gives a reader is a place to compare today's
+`/api/attest` against yesterday's recorded snapshot. The format is
+stable on purpose so other observers can archive or mirror it.
 
 ## What lives here
 
