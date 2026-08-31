@@ -1,0 +1,3 @@
+# Anything a workflow step might drop before committing HEADS.jsonl.
+tmp.json
+attest.json
