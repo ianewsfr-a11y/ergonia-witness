@@ -32,6 +32,42 @@ disabled, GitHub outage, network error). A day with two lines means
 the same job ran twice, which is worth flagging in the steward's
 report.
 
+## A known defect in HEADS.jsonl, and why it is not being edited
+
+Every record written to this file before 2026-09-26 sits on a single
+line. The file has 5027 bytes, 31 daily records and zero newline
+characters in it, so it does not parse as JSONL even though this README
+has been calling it JSONL since the first commit.
+
+The cause was one line in the steward's workflow. It appended with
+`printf '%s%s\n' "$CURRENT" "$LINE"`, and command substitution strips
+the trailing newline off `CURRENT`, so every day's record glued itself
+onto the previous one. `STATS.jsonl`, written ten lines further down the
+same workflow, inserted the separator explicitly and has always been
+correct. Fixed on 2026-09-25; records from 2026-09-26 onward each sit on
+their own line.
+
+The 31 concatenated records are being left exactly as they are. This
+file exists so that a rewrite of history is detectable, and a file like
+that does not get rewritten because its formatting is inconvenient. No
+value, hash, order or timestamp is wrong; only the separators are
+missing. Repairing them would change the bytes of an append-only audit
+file to make it prettier, which is the one thing it is here to make
+suspicious.
+
+To read the historical portion, split on the boundary between records:
+
+```
+curl -s https://raw.githubusercontent.com/ianewsfr-a11y/ergonia-witness/main/HEADS.jsonl \
+  | sed 's/}{/}\n{/g' | jq -c .
+```
+
+Found on 2026-09-25 by a reader on r/mcp who pointed out that a server
+recomputing its own chain proves nothing about a server that rewrote
+history, which is what sent someone to actually read this file for the
+first time. The project's own checks had verified that the last record
+matched the live chain and had never once parsed the file.
+
 ## How to check the chain
 
 If today's line is `{count: N, head_hash: H}`, then hitting
