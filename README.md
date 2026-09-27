@@ -24,6 +24,20 @@ oldest first. Each line is a compact JSON object:
 - `head_id` : the id of the newest event at capture time
 - `head_hash` : the SHA-256 of that event (as returned by /api/attest)
 - `captured_at` : the ISO-8601 UTC timestamp the request was made
+- `prev_head_id`, `prev_head_hash` : the head named by the previous
+  line. Present from 2026-09-28 on; the lines before that carry none.
+
+Since 2026-09-28 a checkpoint is also **refused**, and the job fails
+loudly instead of appending, when the live chain contradicts the last
+line: fewer events than it recorded, the same count under another head,
+or the event it named now hashing to something else. Until then the
+workflow appended whatever `/api/attest` returned, so a rewrite would
+have been recorded as one more ordinary day. Suggested on r/mcp,
+2026-09-27: "bind each checkpoint to the previously published head and
+an event counter, because a rewritten chain can look correct while
+quietly omitting a period of calls." The counter (`count`) was already
+there; the binding and the refusal were not. The logic is in
+`lib/witness-checkpoint.mjs` of the steward, with its tests.
 
 The append order is guaranteed by the workflow: any line committed
 under a given date is committed in a single push per day. A day
